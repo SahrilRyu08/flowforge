@@ -19,7 +19,7 @@ class RetryUtilsTest {
         StepExecutor failExec = mock(StepExecutor.class);
         when(failExec.execute(any())).thenThrow(new RuntimeException("Network Error"));
 
-        StepExecutionResult stepExecutionResult = RetryUtils.executionResult(failExec, step);
+        StepExecutionResult stepExecutionResult = RetryUtils.executeWithRetry(failExec, step);
         assertFalse(stepExecutionResult.success());
         assertNotNull(stepExecutionResult.error());
         verify(failExec, times(3)).execute(step);
