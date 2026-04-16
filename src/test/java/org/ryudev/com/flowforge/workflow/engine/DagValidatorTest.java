@@ -16,25 +16,26 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
 class DagValidatorTest {
-    @InjectMocks DagValidator validator;
 
+    @InjectMocks DagValidator dagValidator;
     @Test
     void rejectCyclicDag() {
         List<Step> steps = List.of(
                 new Step("A", StepType.HTTP, Map.of(), List.of("B"), 0, Duration.ZERO),
                 new Step("B", StepType.HTTP, Map.of(), List.of("A"), 0, Duration.ZERO)
+
         );
-        WorkflowDefinition workflowDefinition = new WorkflowDefinition("wf", "Cyclic", Duration.ofMinutes(5), steps);
-        assertThrows(IllegalArgumentException.class, () -> validator.validate(workflowDefinition));
+        WorkflowDefinition workflowDefinition = new WorkflowDefinition("wf", "Cyclic", Duration.ofMinutes(5),steps);
+        assertThrows(IllegalArgumentException.class, () -> dagValidator.validate(workflowDefinition));
     }
 
     @Test
-    void acceptsAcyclicDaf() {
+    void acceptCyclicDag() {
         List<Step> steps = List.of(
                 new Step("A", StepType.HTTP, Map.of(), List.of(), 0, Duration.ZERO),
-                new Step("B", StepType.HTTP, Map.of(), List.of("A"), 0, Duration.ZERO)
+                new Step("B", StepType.HTTP, Map.of(), List.of(), 0, Duration.ZERO)
         );
-        WorkflowDefinition workflowDefinition = new WorkflowDefinition("wf", "Cyclic", Duration.ofMinutes(5), steps);
-        assertDoesNotThrow(() -> validator.validate(workflowDefinition));
+        WorkflowDefinition workflowDefinition = new WorkflowDefinition("wf", "Cyclic",Duration.ofMinutes(5), steps);
+        assertDoesNotThrow(() -> dagValidator.validate(workflowDefinition));
     }
 }
