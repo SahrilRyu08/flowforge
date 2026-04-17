@@ -34,7 +34,6 @@ class JwtAuthenticationFilterTest {
     void validToken_allowsRequest() throws Exception {
         String token = "valid.token.here";
 
-
         when(jwtService.extractUsername(anyString())).thenReturn("tenant-A");
         when(jwtService.isValid(anyString(), anyString())).thenReturn(true);
         when(jwtService.extractRole(anyString())).thenReturn(Role.EDITOR);
@@ -47,5 +46,4 @@ class JwtAuthenticationFilterTest {
         verify(jwtService).isValid(token, "tenant-A");
         verify(jwtService).extractRole(token);
     }
-
 }
