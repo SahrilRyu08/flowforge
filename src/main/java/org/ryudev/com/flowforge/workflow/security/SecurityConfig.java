@@ -2,6 +2,7 @@ package org.ryudev.com.flowforge.workflow.security;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.ryudev.com.flowforge.tenant.TenantInterceptor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -10,6 +11,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 @EnableWebSecurity
@@ -34,6 +37,16 @@ public class SecurityConfig {
 //                            response.getWriter().write("{\"error\":\"Unauthorized\"}");
 //                        }))
                 .build();
+    }
+
+    @Bean
+    public WebMvcConfigurer mvcConfigurer(TenantInterceptor tenantInterceptor) {
+        return new WebMvcConfigurer() {
+            @Override
+            public void addInterceptors(InterceptorRegistry registry) {
+               registry.addInterceptor(tenantInterceptor).addPathPatterns("/api/**");
+            }
+        };
     }
 
 }
