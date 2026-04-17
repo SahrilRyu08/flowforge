@@ -38,15 +38,12 @@ class TenantIsolationTest {
     @Test
     void tenantContextClearAfterRequest() throws Exception {
         String token = "valid.token.here";
-
         when(jwtService.extractUsername(anyString())).thenReturn("tenant-A");
         when(jwtService.isValid(anyString(), anyString())).thenReturn(true);
         when(jwtService.extractRole(anyString())).thenReturn(Role.EDITOR);
-
         mockMvc.perform(get("/api/test")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk());
-
         verify(jwtService).extractUsername(token);
         verify(jwtService).isValid(token, "tenant-A");
         verify(jwtService).extractRole(token);
