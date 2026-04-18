@@ -16,13 +16,19 @@ import java.util.Map;
 import java.util.concurrent.*;
 
 @Service
-@RequiredArgsConstructor
 public class WorkflowEngine {
     private final DagValidator validator;
     private final DagScheduler scheduler;
-    public List<StepExecutor> executorList;
+    List<StepExecutor> executorList;
     private final ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
     private final Map<StepType, StepExecutor> registry = new HashMap<>();
+
+    public WorkflowEngine(DagValidator validator, DagScheduler scheduler, List<StepExecutor> executorList) {
+        this.validator = validator;
+        this.scheduler = scheduler;
+        this.executorList = executorList;
+    }
+
 
     @PostConstruct
     void initRegistry() {

@@ -2,6 +2,7 @@ package org.ryudev.com.flowforge.workflow.security;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.ryudev.com.flowforge.config.RateLimitFilter;
 import org.ryudev.com.flowforge.tenant.TenantInterceptor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,6 +20,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @RequiredArgsConstructor
 public class SecurityConfig {
     private final JwtAuthenticationFilter jwtFilter;
+    private final RateLimitFilter rateLimitFilter;
 
 
     @Bean
@@ -32,10 +34,11 @@ public class SecurityConfig {
                                 .requestMatchers("/api/triggers/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_EDITOR")
                                 .anyRequest().authenticated())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-//                .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> {
-//                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-//                            response.getWriter().write("{\"error\":\"Unauthorized\"}");
-//                        }))
+                .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
+                .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.getWriter().write("{\"error\":\"Unauthorized\"}");
+                        }))
                 .build();
     }
 
