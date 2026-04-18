@@ -125,7 +125,7 @@ class WorkflowControllerTest {
         mvc.perform(get("/api/workflows")
                         .param("page", "0")
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isForbidden()); // atau isForbidden() tergantung config
+                .andExpect(status().isForbidden());
     }
 
     @Test
