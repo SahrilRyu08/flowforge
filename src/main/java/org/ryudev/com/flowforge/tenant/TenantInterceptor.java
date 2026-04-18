@@ -18,7 +18,7 @@ public class TenantInterceptor implements HandlerInterceptor {
                              HttpServletResponse response,
                              Object handler) throws Exception {
         String auth = request.getHeader("Authorization");
-        if (auth != null && auth.startsWith("Beare ")) {
+        if (auth != null && auth.startsWith("Bearer ")) {
             String tenantId = jwtService.extractUsername(auth.substring(7));
             TenantContext.set(tenantId);
         }

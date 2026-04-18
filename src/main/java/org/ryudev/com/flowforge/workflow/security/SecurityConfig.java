@@ -28,7 +28,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorizationManagerRequestMatcherRegistry ->
                         authorizationManagerRequestMatcherRegistry
                                 .requestMatchers("/api/auth/**", "/swagger-ui/**","/v3/api-docs", "/actuator/**").permitAll()
-                                .requestMatchers("/api/workflows/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_EDITOR", "ROLE_VIWER")
+                                .requestMatchers("/api/workflows/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_EDITOR", "ROLE_VIEWER")
                                 .requestMatchers("/api/triggers/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_EDITOR")
                                 .anyRequest().authenticated())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
