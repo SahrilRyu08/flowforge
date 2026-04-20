@@ -1,0 +1,110 @@
+spring:
+  application:
+    name: flowforge
+
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/flowforge}
+    username: ${DATABASE_USER:flowforge}
+    password: ${DATABASE_PASSWORD:flowforge}
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 20000
+      idle-timeout: 300000
+      max-lifetime: 1200000
+      pool-name: FlowForgeHikariCP
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          time_zone: UTC
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 16
+          max-idle: 8
+          min-idle: 2
+
+  cache:
+    type: redis
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    default-property-inclusion: non_null
+
+server:
+  port: ${PORT:8080}
+  compression:
+    enabled: true
+    min-response-size: 1024
+  error:
+    include-message: always
+    include-binding-errors: always
+
+# ── JWT Configuration ─────────────────────────────────────────────────────
+flowforge:
+  jwt:
+    secret: ${JWT_SECRET:bXlTdXBlclNlY3JldEtleVRoYXRJc0F0TGVhc3Q2NEJ5dGVzTG9uZ0ZvclNlY3VyaXR5}
+    expiration-ms: ${JWT_EXPIRATION_MS:86400000}       # 24h
+    refresh-expiration-ms: ${JWT_REFRESH_MS:604800000} # 7d
+
+  # ── Rate Limiting ─────────────────────────────────────────────────────────
+  rate-limit:
+    enabled: true
+    default-rps: 100
+    burst: 200
+
+  scheduler:
+    cron-check-ms: 60000
+
+  ai:
+    openai:
+      api-key: ${FLOWFORGE_AI_OPENAI_API_KEY:}
+      model: ${FLOWFORGE_AI_OPENAI_MODEL:gpt-4o-mini}
+      base-url: ${FLOWFORGE_AI_OPENAI_BASE_URL:https://api.openai.com/v1}
+
+# ── Actuator ─────────────────────────────────────────────────────────────
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+
+# ── OpenAPI ──────────────────────────────────────────────────────────────
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+
+# ── Logging ──────────────────────────────────────────────────────────────
+logging:
+  level:
+    com.flowforge: INFO
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
