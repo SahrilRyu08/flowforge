@@ -1,46 +1,83 @@
 package org.ryudev.com.flowforge.config;
-import io.github.bucket4j.Bandwidth;
-import io.github.bucket4j.Bucket;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
+import org.springframework.lang.NonNull;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.core.Ordered;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Token-bucket style limiter per client IP for {@code /api/**} using Redis INCR + TTL.
+ */
 @Component
-public class RateLimitFilter extends OncePerRequestFilter {
-    private final Map<String, Bucket> bukets = new ConcurrentHashMap<>();
+@ConditionalOnBean(StringRedisTemplate.class)
+@RequiredArgsConstructor
+public class RateLimitFilter extends OncePerRequestFilter implements Ordered {
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        String tenantId = request.getHeader("X-Tenant-ID");
-        if (tenantId == null || tenantId.isBlank()) {
-            tenantId = request.getRemoteAddr();
-        }
+    public int getOrder() {
+        return 100;
+    }
 
-        Bucket bucket = bukets.computeIfAbsent(tenantId, key ->
-                Bucket.builder()
-                        .addLimit(Bandwidth.builder()
-                                .capacity(10)
-                                .refillIntervally(10, Duration.ofMinutes(1)).build())
-                        .build());
+    private final StringRedisTemplate redis;
 
-        if (!bucket.tryConsume(1)) {
-            response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
-            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-            response.getWriter().write("{\"error\":\"Rate limit exceeed. Try again\"}");
-            response.getWriter().flush();
+    @Value("${flowforge.rate-limit.enabled:true}")
+    private boolean enabled;
+
+    @Value("${flowforge.rate-limit.burst:200}")
+    private int burst;
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        return !path.startsWith("/api/");
+    }
+
+    @Override
+    protected void doFilterInternal(
+            @NonNull HttpServletRequest request,
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain) throws ServletException, IOException {
+
+        if (!enabled) {
+            filterChain.doFilter(request, response);
             return;
         }
 
-        filterChain.doFilter(request,response);
+        String ip = clientIp(request);
+        String key = "rl:" + ip + ":" + (request.getRequestURI().hashCode() & 0x7fffffff);
+
+        Long count = redis.opsForValue().increment(key);
+        if (count != null && count == 1L) {
+            redis.expire(key, Duration.ofSeconds(1));
+        }
+
+        if (count != null && count > burst) {
+            response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\":\"rate_limit_exceeded\"}");
+            return;
+        }
+
+        filterChain.doFilter(request, response);
+    }
+
+    private static String clientIp(HttpServletRequest request) {
+        String xf = request.getHeader("X-Forwarded-For");
+        if (xf != null && !xf.isBlank()) {
+            return xf.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
     }
 }
