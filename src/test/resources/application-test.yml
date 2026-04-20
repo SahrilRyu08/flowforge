@@ -1,0 +1,43 @@
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+  datasource:
+    url: jdbc:h2:mem:flowforge_test;DB_CLOSE_DELAY=-1;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+
+  flyway:
+    enabled: false  # H2 uses ddl-auto instead
+
+  data:
+    redis:
+      host: localhost
+      port: 6380  # Use embedded/mock Redis in tests
+
+  cache:
+    type: simple  # Use simple in-memory cache for tests
+
+flowforge:
+  rate-limit:
+    enabled: false
+  jwt:
+    secret: dGVzdFNlY3JldEtleVRoYXRJc0F0TGVhc3Q2NEJ5dGVzTG9uZ0ZvclRlc3Rpbmc=
+    expiration-ms: 3600000
+    refresh-expiration-ms: 7200000
+  scheduler:
+    cron-check-ms: 3600000
+
+logging:
+  level:
+    com.flowforge: DEBUG
+    org.springframework.security: DEBUG
